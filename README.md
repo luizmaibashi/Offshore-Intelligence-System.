@@ -21,7 +21,7 @@ Um projeto completo de Ciência de Dados de ponta a ponta, focado na geração d
 
 ## 📌 Contexto e Dor de Negócio
 
-A **NEXUM** é um ecossistema financeiro multi-vertical focado em patrimônios diversos (Qualificado, Investidor, Alta Renda e Wealth). O departamento internacional gerencia aproximadamente 40.000 clientes, sendo cerca de 3.000 deles ativos com contas globais operantes. 
+A **NEXUM** é um ecossistema financeiro multi-vertical focado em patrimônios diversos (Qualificado, Investidor, Alta Renda e Wealth). A NXUM possui aproximadamente 40.000 clientes, sendo cerca de 3.000 deles ativos com contas globais operantes. 
 
 **O Problema (O Processo Atual Míope):**
 O trabalho do Especialista de Mercado Internacional consistia em abrir relatórios gigantescos e encontrar manualmente quais contas estavam "descalibradas". Problemas imediatos:
