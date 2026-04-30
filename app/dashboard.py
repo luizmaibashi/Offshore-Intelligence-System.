@@ -14,6 +14,7 @@ import numpy as np
 import joblib
 import json
 import os
+import sys
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
@@ -94,6 +95,9 @@ st.markdown("""
 # CARGA DE DADOS E MODELOS
 # ──────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
 from src.utils import calcular_score_ois
 
 @st.cache_resource
