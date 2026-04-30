@@ -1,0 +1,34 @@
+{
+  "versao": "1.0",
+  "dolar_benchmark": 5.0,
+  "offshore_benchmark": {
+    "Qualificado": 0.08,
+    "Investidor": 0.12,
+    "Alta Renda": 0.2,
+    "Wealth": 0.3
+  },
+  "caixa_critico_usd": {
+    "Qualificado": 20000,
+    "Investidor": 40000,
+    "Alta Renda": 80000,
+    "Wealth": 150000
+  },
+  "pesos_criterios": {
+    "sc_concentr_br": 0.2,
+    "sc_offshore": 0.18,
+    "sc_cdi": 0.15,
+    "sc_caixa_usd": 0.13,
+    "sc_remessa": 0.1,
+    "sc_dolar": 0.09,
+    "sc_perfil_rf": 0.07,
+    "sc_bdr": 0.04,
+    "sc_perda_br": 0.02,
+    "sc_gastos_dolar": 0.02
+  },
+  "thresholds_prioridade": {
+    "CRÍTICO": 62,
+    "ALTO": 45,
+    "MODERADO": 28,
+    "BAIXO": 12
+  }
+}

@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.ipynb_checkpoints
+.pytest_cache/
+
+# Streamlit
+.streamlit/
+
+# Arquivos de dados brutos (opcional, se forem muito grandes)
+# data/raw/
+
+# Artefatos locais
+OIS_LinkedIn_Carousel.pptx
+ois_demo_premium.webp
+notebooks/
+images/
+reports/
