@@ -10,7 +10,7 @@ Um projeto completo de Ciência de Dados de ponta a ponta, focado na geração d
 
 | **Deploy** | Streamlit App (High Visibility) · FastAPI ready · pip package |
 | **Arquitetura** | **Modular Deep System** (Proteção contra Training-Serving Skew) |
-| **ROI Estimado** | > 300% no 1º ano · Payback < 4 meses · 400h/ano economizadas |
+| **ROI (cenário, não medido)** | ~300% no 1º ano sob premissas de 25% conversão + 5pp aumento offshore · ver seção 5 |
 
 > ***"Nunca comece pelo código. Comece pela pergunta do negócio."***
 
@@ -67,8 +67,8 @@ A Análise Exploratória (EDA) validou as regras provando seus comportamentos at
 
 #### 4. Matriz de Correlação (Validando Paradigmas)
 ![Matriz de Correlação](images/eda_correlacao.png)
-> **💡 Interpretação Matemática (O que foi feito?):** Criamos matrizes e executamos testes formais paramétricos (ANOVA e Teste T). 
-> **A Conclusão Estatística:** Nós confirmamos estatisticamente (P-Valor < 0,05) que existe uma diferença sistemática da exposição à Câmbio entre uma Pessoa Física (PF) e uma Pessoa Jurídica Operacional (PJ).
+> **💡 Interpretação Matemática (O que foi feito?):** Criamos matrizes e executamos testes formais paramétricos (ANOVA e Teste T).
+> **A Conclusão Estatística:** ANOVA por segmento (F=450,13; p=2,14e-241; n=3.000) é estatisticamente significativa — mas com essa amostra qualquer efeito, mesmo pequeno, tende a ser significativo, e o notebook não calcula o effect size (η²), então "significativo" aqui não é sinônimo de "grande". **O teste que testava diferença entre Pessoa Física (PF) e Pessoa Jurídica Operacional (PJ) deu t=0,14, p=0,885 — sem diferença estatística detectável.** Uma versão anterior deste README afirmava o oposto (diferença "confirmada"); corrigido em 2026-08-25 depois de rodar o notebook do zero e conferir a saída real (ver [ADR-0001](docs/adr/0001-k-real-vs-narrativa-de-6-clusters.md)).
 
 
 ### ⚙️ Fase 3: Feature Engineering (Engenharia do Score Mestre)
@@ -80,16 +80,28 @@ Estas sub-notas se conjugaram por seus multiplicadores e geraram o **SCORE GAP T
 > **💡 Validação Científica (Gráficos Acima):** Testamos se a equação heurística desenhada acertou a tese inicial com correlação Matemática. Observamos pelo Dispersor do Meio que o Score Funciona, tendo correlação P < 0.001 Negativa Estreita (Perfeitamente Inverso). Ou seja: **Quanto menor a proteção em Offshore (% Dólares Investidos), Estrondosamente Maior sobe o Score Gab Total Vermelho (Recomendação de socorro).**
 
 
-### ⚙️ Fase 4: O Algoritmo de Clusters Estratégicos (Modeling)
-Nós tínhamos o Ranking Vertical numérico, ordenado por prioridade de urgência, mas precisávamos dar subsídios narrativos de venda aos Assessores. Acoplamos Inteligência Artificial Não Supervisionada (Modelo **K-Means Clustering**).
+### ⚙️ Fase 4: Clusterização (Modeling) — e uma correção de honestidade
+
+Nós tínhamos o Ranking Vertical numérico, ordenado por prioridade de urgência, e testamos se
+Clustering (K-Means, K variando de 2 a 12, critério de seleção = maior Silhouette Score)
+revelava segmentos comportamentais adicionais, úteis para roteirizar a abordagem do assessor.
 
 ![Seleção K-Means](images/kmeans_k_selection.png)
-> **💡 O Que Foi Feito (Gráfico Acima):** Como saber em quantos segmentos comportamentais devíamos quebrar os clientes? Os gráficos do "Cotovelo" e do "Silhouette Score" bateram seus picos em K = 6, confirmando matematicamente que existem ali 6 grupos distintos.
+> **💡 O que o gráfico mostra de fato:** o K com maior Silhouette Score no intervalo testado é
+> **K = 2** (Silhouette = 0,2040). Uma versão anterior deste README afirmava K=6 "confirmado por
+> Elbow e Silhouette" — não era verdade: o próprio código usa `K_FINAL = best_k` (o resultado do
+> critério estatístico), e `best_k` sempre saiu 2 nas execuções conferidas. Corrigido em
+> 2026-08-25 depois de rodar o notebook do zero (Restart & Run All) e comparar a saída real com
+> o texto — ver [ADR-0001](docs/adr/0001-k-real-vs-narrativa-de-6-clusters.md) para a
+> investigação completa e o porquê de manter K=2 em vez de forçar K=6.
 
-Aplicamos estes 6 modelos sobre toda a gama em perigo:
-![Clusters Identificados](images/kmeans_clusters.png)
-> **💡 Interpretação Operacional:** Nós demos identidades psicológicas as manchas de dispersão achadas pelas linhas da inteligência de Agrupamentos.
-> **Exemplo Prático 1:** O cluster Verde Água aponta para "Oportunidade de Caixa Parado", um alvo fácil para investir em T-Bills (Tesouro Americano Renda Fixa Tática).  Eles têm perfil distinto e abordagem totalmente diferente do cluster Azul Escuro de "Inativo - Sem Remessa Recente", onde a missão de venda não é produto novo, de repactuação de laços digitais com o Home Broker.
+**O que isso significa na prática:** 0,2040 é Silhouette fraco (referência usual: >0,50 forte,
+0,25–0,50 razoável, <0,25 fraco) — a base sintética não tem estrutura de cluster rica o
+suficiente para sustentar uma segmentação de 6 perfis com script de venda próprio cada. A
+priorização por faixa de score (CRÍTICO/ALTO/MODERADO/BAIXO, seção seguinte) continua real e
+é o que de fato orienta a lista do assessor; o clustering, tal como está, não agrega uma
+segunda camada de segmentação confiável em cima disso — fica registrado como próximo passo em
+vez de fingido como entregue.
 
 
 ### ⚙️ Fase 5: Métrica de Negócios & Conversão Estimada (Evaluation)
@@ -99,9 +111,15 @@ Sistemas Data-Driven corporativos precisam ser interpretados em lucros perantes 
 > **💡 O Que Foi Feito:** Mostrou-se visualmente no BoxPlot de Heat-Map e Distribuição o volume segregado de Top Clientes. Na sequência, rodamos um simulador tático nos logs de finanças: **O Cálculo do ROI (Simulação de Retorno Físiativo).**
 
 ![ROI Analysis](images/roi_analysis.png)
-> **💡 O ROI Extraído:** Formulamos uma esteira que pegaria apenas a Nata Priorizada ("Vermelho e Alaranjado"). Adotando premissas de conversão cética (apenas 25% das ligações se converteriam efetivamente), resultando em aumento de parcos 5 pontos no Offshore global, prevemos o salto total de novos dinheiros administráveis multiplicados pelas taxações médias anuais conservadoras do banco.
->
-> A OIS **paga suas centenas de milhares em implantação digital com sobra liquida anual gritante e Retornos absurdos na casa percentual elevada**, atestando o êxito analítico do algoritmo OIS.
+> **💡 O ROI é uma projeção de cenário, não um resultado medido.** A base é 100% sintética — não
+> existe conversão real de assessor nem retenção real de AuC observada. O número (>300%) é a
+> saída de uma simulação com premissas explícitas: 25% de taxa de conversão nas ligações da
+> lista priorizada (CRÍTICO+ALTO, n=911, 30,4% da base offshore ativa de 3.000 clientes) e 5pp
+> de aumento médio na alocação offshore desses clientes. O heatmap acima varia essas duas
+> premissas — é o jeito certo de ler esse número: como sensibilidade, não como garantia. Sem
+> dado real de conversão pós-implantação, este ROI não pode ser tratado como validado; fica
+> como hipótese testável no primeiro trimestre de uso real, com o critério de re-calibração já
+> definido na seção de Monitoramento de Drift abaixo.
 
 
 ### ⚙️ Fase 6: Produção, Exportação e API Real-Time (Deployment)

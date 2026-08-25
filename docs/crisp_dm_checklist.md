@@ -98,7 +98,7 @@
 1. Taxa de ativação internacional cresce com PL (Qualificado: 1,7% vs. Wealth: alta)
 2. Predominância massiva de CDI/RF BR em todos os segmentos — "Conforto em Renda Fixa"
 3. Pico de compras históricas de dólar na faixa R$ 5,40+ (âncora comercial)
-4. Diferença estatisticamente significativa entre PF e PJ na exposição cambial (T-Test, p < 0.05)
+4. ~~Diferença estatisticamente significativa entre PF e PJ na exposição cambial~~ — **corrigido 2026-08-25**: T-Test real deu t=0,14, p=0,885 (sem diferença detectável). O achado anterior estava errado; ver [ADR-0001](adr/0001-k-real-vs-narrativa-de-6-clusters.md).
 5. Gap Crítico Oculto: clientes Wealth bilionários com < 10% offshore
 
 ---
@@ -166,7 +166,10 @@
 
 [x] 4. Comparação de múltiplos K
         → K testados: 2 a 12.
-          K=6 selecionado: Silhouette Score e Elbow convergem no mesmo ponto.
+          K=2 selecionado (Silhouette Score máximo = 0,2040, faixa fraca pela referência
+          usual >0,50 forte / 0,25–0,50 razoável / <0,25 fraco). **Correção 2026-08-25**:
+          este documento afirmava K=6 "confirmado por Silhouette e Elbow" — não era o
+          resultado real do código (`K_FINAL = best_k`). Ver ADR-0001.
 
 [x] 5. Validação robusta
         → Silhouette Score calculado na base completa.
@@ -189,28 +192,35 @@
 
 ```
 [x] 1. Performance nos dados de teste
-        → Silhouette Score validado.
-          Correlação score_gap_total vs. pct_offshore: p < 0.001 (validação científica).
+        → Silhouette Score real: 0,2040 (K=2) — faixa fraca, não "validado" sem ressalva.
+          Correlação score_gap_total vs. pct_offshore: p < 0.001, mas **parcialmente
+          circular** — pct_offshore é um dos 10 componentes de entrada do próprio score
+          (peso 18%, `sc_offshore`), então essa correlação testa consistência interna da
+          fórmula, não é uma validação independente de que o score prediz algo novo.
 
-[x] 2. Matriz de Confusão → Equivalente: Interpretação dos Clusters
-        → Cluster 0: Concentração Máxima BR — abordagem de urgência
-          Cluster 1: Caixa USD Parado — produto alvo: T-Bills
-          Cluster 2: Dólar Médio Elevado — âncora: "baixamos seu dólar médio"
-          Cluster 3: Baixa Adesão Offshore — educação de mercado
-          Cluster 4: Inativo (sem remessa) — reengajamento digital
-          Cluster 5: Perfil Conservador RF — adequação de perfil
+[ ] 2. Matriz de Confusão → Equivalente: Interpretação dos Clusters
+        → **Correção 2026-08-25**: os 6 clusters nomeados abaixo nunca corresponderam ao
+          resultado real do K-Means (`K_FINAL = best_k` = 2, não 6). Removido — ver
+          [ADR-0001](adr/0001-k-real-vs-narrativa-de-6-clusters.md). A segmentação que de
+          fato orienta a lista do assessor é a faixa de score (CRÍTICO/ALTO/MODERADO/BAIXO),
+          não o cluster.
 
-[x] 3. Comparação com baseline
+[ ] 3. Comparação com baseline
         → Baseline (sem segmentação): abordagem genérica para todos.
-          OIS: 6 scripts de venda personalizados por perfil.
+          OIS: priorização por faixa de score (4 faixas), não por 6 scripts de cluster —
+          os scripts de venda por perfil eram descrição de um resultado que o modelo nunca
+          produziu.
 
-[x] 4. Meta analítica atingida
-        → Score correlacionado negativamente com offshore: p < 0.001. ✅
-          K=6 confirmado por Elbow + Silhouette. ✅
+[~] 4. Meta analítica atingida
+        → Score correlacionado com offshore: p < 0.001, com a ressalva de circularidade do
+          item 1 acima.
+          K=2 é o resultado real do critério estatístico (não K=6). ✅ honestidade,
+          ⚠️ narrativa original invalidada.
 
-[x] 5. Meta de negócio alcançável
-        → Com 25% de taxa de conversão e 5pp de aumento offshore:
-          ROI estimado: > 300% no primeiro ano. ✅
+[~] 5. Meta de negócio alcançável — **é projeção, não resultado medido**
+        → Cenário simulado (25% de taxa de conversão e 5pp de aumento offshore, sem dado
+          real de conversão pós-implantação): ROI projetado ~300% no primeiro ano. Marcado
+          como cenário testável, não como meta "atingida" — não existe medição real ainda.
 
 [x] 6. Feature Importance — Explicabilidade
         → Pesos dos critérios documentados e visualizados no Streamlit.
@@ -228,10 +238,12 @@
 
 | Métrica | Valor | Interpretação |
 |---|---|---|
-| Correlação Score vs. % Offshore | p < 0.001 | Direção inversa confirmada cientificamente |
-| K selecionado | 6 | Confirmado por Elbow + Silhouette |
-| ROI estimado (conservador) | > 300% | Payback em < 4 meses |
-| Horas economizadas/ano | > 400h | Validado por benchmark do processo anterior |
+| Correlação Score vs. % Offshore | p < 0.001 | Consistência interna da fórmula — pct_offshore é insumo do próprio score (18% do peso), não validação independente |
+| ANOVA por segmento | F=450,13; p=2,14e-241; n=3.000 | Significativo, mas effect size (η²) não calculado — n grande infla significância |
+| T-test PF × PJ | t=0,14; p=0,885 | **Sem diferença detectável** (corrigido 2026-08-25; versão anterior afirmava o oposto) |
+| K selecionado | 2 | Resultado real do Silhouette (máx. 0,2040 — faixa fraca); K=6 da versão anterior não correspondia ao código |
+| ROI (cenário, não medido) | ~300% | Projeção sob premissas de 25% conversão + 5pp aumento offshore; sem dado real de conversão ainda |
+| Horas economizadas/ano | > 400h | Estimativa de benchmark do processo manual anterior — não medida em produção |
 
 ---
 
@@ -295,8 +307,22 @@
 
 ---
 
-**Conclusão:** O projeto OIS atinge **100% do Nível 3 (Avançado)** do Framework de Qualidade do Roadmap CRISP-DM.
+**Conclusão (revisada 2026-08-25):** O projeto cobre estruturalmente as 6 fases do CRISP-DM,
+mas a auto-avaliação original de "100% Nível 3" escondia duas falhas reais achadas ao rodar o
+notebook do zero: uma narrativa de clustering (K=6) que nunca correspondeu ao código, e um
+teste de hipótese (PF×PJ) relatado com o sinal invertido. Ambas corrigidas nesta revisão — ver
+[ADR-0001](adr/0001-k-real-vs-narrativa-de-6-clusters.md). O que continua de pé sem ressalva:
+Fases 1, 3 e 6 (entendimento de negócio, preparação de dados, deploy). O que passou a ter
+ressalva explícita: Fases 2, 4 e 5 (achados estatísticos com circularidade/effect size não
+calculado, K real mais fraco que o anunciado, ROI como projeção e não resultado).
+
+**Débitos técnicos registrados nesta revisão** (sem correção ainda — próximos passos):
+- Effect size (η²) do ANOVA/T-test não calculado.
+- Sem testes automatizados (`pytest` não está em `requirements.txt`, sem pasta `tests/`).
+- `scikit-learn`/`joblib` sem pin de versão exata em `requirements.txt`, apesar de `models/*.pkl`
+  serializados (risco de quebra silenciosa ao carregar com versão divergente).
 
 ---
 
 *Documento gerado como parte da auditoria CRISP-DM | Offshore Intelligence System v1.0 | Abril 2026*
+*Revisado em 2026-08-25 (honestidade estatística) — ver [ADR-0001](adr/0001-k-real-vs-narrativa-de-6-clusters.md)*
