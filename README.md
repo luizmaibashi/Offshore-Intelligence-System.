@@ -18,16 +18,23 @@ abordagem da equipe de assessores, com o motivo do contato explícito por caso.
 
 ## Contexto e dor de negócio
 
-Cenário fictício (NEXUM): ecossistema financeiro multi-vertical com ~40.000 clientes,
-~3.000 com conta internacional ativa, segmentados em Qualificado / Investidor / Alta Renda /
-Wealth.
+A ANBIMA recomenda alocação mínima de 16-18% do patrimônio em ativos no exterior para proteger
+o poder de compra da variação cambial ([ANBIMA via Safra, 2026](https://oespecialista.safra.com.br/anbima-investidor-brasileiro-2026/)) — na prática, mais de 95% dos ativos de
+brasileiros permanecem em ativo local, um dos menores níveis de diversificação global entre
+países emergentes ([NeoFeed](https://neofeed.com.br/negocios/fundos-internacionais-a-proxima-fronteira-da-xp/)). É o gap que XP (17% da custódia em offshore, R$180bi em wealth B2B,
++80% em menos de 2 anos) e BTG (~R$130bi em multi-family office após comprar Julius Baer Brasil
+e JGP) estão correndo para capturar ([Forbes](https://forbes.com.br/forbes-money/2026/08/xp-cresce-gestao-fortunas-amplia-aposta-exterior/), [NeoFeed](https://neofeed.com.br/wealth-management/xp-chega-a-r-180-bilhoes-na-gestao-de-fortunas-b2b-e-avanca-80-em-menos-de-dois-anos/)).
 
-**O problema modelado:** o especialista de mercado internacional cruza relatórios manualmente
-para achar contas com alocação desbalanceada. Isso é lento, sem critério padronizado de quem
-contatar primeiro, e deixa capital do cliente ocioso em vez de alocado em produtos internacionais.
+**O problema modelado:** em uma operação de wealth management com carteira internacional, o
+especialista de mercado cruza relatórios manualmente para achar contas com alocação
+desbalanceada frente a esse gap. Isso é lento, sem critério padronizado de quem contatar
+primeiro, e deixa capital do cliente ocioso em vez de alocado em produtos internacionais.
 
 **A solução:** motor que processa a base diária, aplica 10 critérios de gap ponderados e
-entrega uma lista priorizada com o motivo do contato por cliente.
+entrega uma lista priorizada com o motivo do contato por cliente. A base de clientes usada
+neste projeto é 100% sintética — não existe dataset público de carteira de wealth management
+por cliente (diferente de crédito ou câmbio corporativo) — ver
+[ADR-0004](docs/adr/0004-dataset-sintetico-como-premissa-consciente.md).
 
 ---
 
@@ -51,7 +58,7 @@ real por trás de nenhum número deste README** (ver [ADR-0004](docs/adr/0004-da
 Correlações citadas na EDA foram injetadas na geração, não descobertas.
 
 #### 1. Visão geral da base
-![Visão Geral Base NEXUM](images/eda_base_total.png)
+![Visão Geral da Base](images/eda_base_total.png)
 > Taxa de ativação internacional cresce com o patrimônio líquido. Segmento Qualificado tem
 > adesão baixa (1,7%); Alta Renda e Wealth, 30%. O segmento Investidor concentra o maior volume
 > de clientes ainda sem conta internacional ativa.
