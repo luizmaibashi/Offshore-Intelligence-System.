@@ -1,11 +1,14 @@
 pandas>=2.2.3
 numpy>=2.1.0
-scikit-learn>=1.4.2
+# Pinado (ticket 0007): models/*.pkl foram serializados com scikit-learn 1.6.1.
+# Carregar com versao maior dispara InconsistentVersionWarning (confirmado
+# 2026-08-29 com sklearn 1.8.0 instalado nesta maquina) -- risco real, nao hipotetico.
+scikit-learn==1.6.1
 matplotlib>=3.8.4
 seaborn>=0.13.2
 streamlit>=1.35.0
 jupyter>=1.0.0
-joblib>=1.4.2
+joblib==1.5.3
 plotly>=5.22.0
 scipy>=1.13.1
 pytest>=8.2.0

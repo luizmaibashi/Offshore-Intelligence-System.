@@ -133,7 +133,7 @@ Offshore-Intelligence-System/
 │
 ├── README.md                        ← Contexto de negócio e impactos
 ├── REPRODUCIBILITY.md               ← Este guia (como rodar o projeto)
-├── requirements.txt                 ← Dependências com versões pinadas
+├── requirements.txt                 ← scikit-learn/joblib pinados (paridade com models/*.pkl); demais com mínimo
 ├── .gitignore
 ├── roadmap_data_science_crispdm.md  ← Template CRISP-DM reutilizável
 │
