@@ -56,33 +56,17 @@ cada 6 meses (mesmo ciclo do `models/*.pkl`, ver README § Monitoramento de drif
 imediatamente se houver CVE alta/crítica divulgada pra imagem `python:3.11-slim` — checar
 [Docker Hub security scan](https://hub.docker.com/_/python) ou Dependabot se ativado no repo.
 
-## 3. `.dockerignore` — criar do zero
+## 3. `.dockerignore` — FALSO POSITIVO, já existia
 
-**Achado:** não existe. `COPY . .` copia `.git/`, `notebooks/`, `data/raw/`, `reports/` pra
-dentro da imagem.
+**Correção 2026-08-29 (achado ao executar a spec):** o achado original do ticket 0011 estava
+errado. `.dockerignore` já existe no repo desde o commit `00b8da2` (dockerização original) e já
+cobre `.git/`, `notebooks/`, `images/`, `reports/`, `.venv/`, `__pycache__/`. O comando de
+auditoria original (`cat .dockerignore 2>/dev/null; echo ---; cat .gitignore`) teve o output do
+`.dockerignore` confundido com o do `.gitignore` — erro de leitura na investigação, não gap no
+código.
 
-**Mudança:** criar `.dockerignore` na raiz do repo:
-```
-.git
-.gitignore
-__pycache__/
-*.pyc
-.pytest_cache/
-.venv/
-venv/
-.streamlit/
-notebooks/
-reports/
-images/
-docs/
-brain/
-*.md
-!README.md
-```
-
-**Cuidado:** `notebooks/OIS_Project.ipynb` gera os `.pkl` em `models/` — confirmar que os
-modelos serializados já commitados são suficientes pro container rodar sem precisar do notebook
-dentro da imagem (o Dockerfile roda só o dashboard, não o notebook — checar `ENTRYPOINT`).
+**Ação:** nenhuma. Item fechado sem mudança — registrado aqui pra não reabrir por engano numa
+próxima auditoria.
 
 ## 4. `app/dashboard.py` — declarar acesso livre como decisão consciente
 
@@ -118,3 +102,32 @@ ADR-0005 §4, alternativa descartada).
 
 Cada item testado com `docker build . && docker run -p 8501:8501 <imagem>` antes de passar pro
 próximo, pra isolar qual mudança quebrou algo se algo quebrar.
+
+---
+
+## Execução (2026-08-29)
+
+**Status: todos os 4 itens fechados, build+run testados.**
+
+- **Item 3 (`.dockerignore`):** falso positivo — já existia desde o commit original de
+  dockerização. Achado do ticket 0011 veio de erro de leitura na auditoria (output do
+  `.dockerignore` confundido com `.gitignore`). Nenhuma mudança feita.
+- **Item 2 (pin por digest):** aplicado —
+  `python:3.11-slim@sha256:1042b61448fef4ba92d16a8c7eb4996d027568ce64792a7877fd88511e0af7c6`
+  (Debian 13/trixie). **Achado ao testar:** o digest atual já não tem
+  `software-properties-common` no repo default do trixie, e o pacote não era usado por nenhum
+  script do repo (nenhum `add-apt-repository`) — removido do Dockerfile. Prova viva do risco
+  documentado no ADR-0005: imagem base muda sob o mesmo nome de tag.
+- **Item 1 (`USER` não-root):** aplicado — `useradd oisuser` + `chown -R` + `USER oisuser`.
+  Testado `docker run` **sem** volume (health check OK) e **com** volume montado no host
+  (`data/` bind mount) simulando a escrita real do dashboard: `WRITE_OK`. Docker Desktop no
+  Windows/WSL2 monta bind mounts com `rwxrwxrwx`, então a escrita passou sem `chown` extra no
+  volume — em Linux nativo (deploy fora de Windows/WSL2) esse comportamento pode diferir;
+  registrado como risco residual, não testado nesse ambiente.
+- **Item 4 (declarar acesso livre):** aplicado — comentário em `app/dashboard.py` (docstring) +
+  linha nova em README § "O que este projeto assume abertamente", ambos linkando ADR-0005.
+  **Achado extra ao executar:** "NEXUM" ainda aparecia na UI visível do dashboard (`st.caption`
+  na sidebar, título de um gráfico Plotly) — resíduo que o grep da decisão 0010 não pegou
+  porque rodou só no README. Removido nos dois pontos. Ainda sobra "NEXUM" em
+  `REPRODUCIBILITY.md`, `docs/crisp_dm_checklist.md` e `notebooks/OIS_Project.ipynb` — fora do
+  escopo desta spec (deploy, não narrativa), registrado como pendência separada.

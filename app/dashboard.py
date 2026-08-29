@@ -2,7 +2,10 @@
 app/dashboard.py
 ----------------
 Offshore Intelligence System (OIS) — Streamlit Dashboard
-NEXUM Financial Ecosystem — Fase 6: Deployment (CRISP-DM)
+Fase 6: Deployment (CRISP-DM)
+
+Dashboard sem autenticação por decisão consciente (ADR-0005) — projeto de portfólio/demo,
+base 100% sintética (ADR-0004), não produção com dado real de cliente.
 
 Execução:
     streamlit run app/dashboard.py
@@ -149,7 +152,6 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     st.markdown("---")
-    st.caption("NEXUM Financial Ecosystem")
     st.caption("Offshore Intelligence System v1.0")
 
 # ──────────────────────────────────────────────
@@ -197,7 +199,7 @@ if page == "📊 Visão Geral":
             df, x=score_col, nbins=50,
             color_discrete_sequence=["#2E86AB"],
             labels={score_col: "Score GAP Total (0–100)"},
-            title="Distribuição dos Scores — 40.000 Clientes NEXUM"
+            title="Distribuição dos Scores — 40.000 Clientes"
         )
         fig.update_layout(
             plot_bgcolor="rgba(0,0,0,0)",

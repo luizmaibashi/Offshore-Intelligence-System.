@@ -167,6 +167,9 @@ Veja [REPRODUCIBILITY.md](REPRODUCIBILITY.md) para o guia completo de setup.
 - **O clustering (K=2) não sustenta segmentação comercial rica** — Silhouette fraco (0,2040),
   registrado como próximo passo, não como entregue ([ADR-0001](docs/adr/0001-k-real-vs-narrativa-de-6-clusters.md)).
 - **O ROI é cenário, não medição.** Sem dado de conversão real pós-implantação.
+- **O dashboard não tem autenticação.** Decisão consciente — projeto de portfólio/demo sobre
+  base sintética, não produção com dado real de cliente
+  ([ADR-0005](docs/adr/0005-hardening-de-deploy-pos-auditoria.md)).
 
 ---
 
