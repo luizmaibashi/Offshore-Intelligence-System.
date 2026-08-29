@@ -6,13 +6,35 @@
 ![CRISP-DM](https://img.shields.io/badge/Methodology-CRISP--DM-F18F01?style=for-the-badge)
 ![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 
-Sistema de priorização de clientes para carteiras internacionais (offshore), seguindo o
-framework CRISP-DM. Identifica gaps de alocação e gera uma lista ordenada de clientes para
-abordagem da equipe de assessores, com o motivo do contato explícito por caso.
+**Este projeto é, antes de tudo, uma auditoria.** Um sistema de priorização de clientes offshore
+(CRISP-DM completo, notebook + dashboard) chegou funcionando, mas com alegações que não batiam
+com o próprio código — pesos "calibrados por especialista" sem calibração nenhuma, um teste de
+hipótese citado como "diferença confirmada" que na verdade tinha efeito trivial (Cohen's
+d=0,007), e um bug real: notebook e dashboard calculavam o score do mesmo cliente com fórmulas
+diferentes. 11 tickets de investigação, 5 ADRs e uma auditoria de deploy depois, o sistema faz
+exatamente o que sempre fez — mas agora dá pra provar isso, e cada limitação está declarada em
+vez de escondida ([ADR-0006](docs/adr/0006-reposicionamento-auditoria-como-produto.md)).
 
-| Deploy | Streamlit App |
+| Deploy | Streamlit App, container roda com usuário não-root e imagem pinada por digest ([ADR-0005](docs/adr/0005-hardening-de-deploy-pos-auditoria.md)) |
 | Arquitetura | Fonte única de scoring compartilhada entre notebook e dashboard ([ADR-0002](docs/adr/0002-pesos-do-score-sao-heuristica-nao-calibracao.md)) |
 | ROI | Cenário com premissas explícitas, não resultado medido — ver Fase 5 |
+| Auditoria | [Board completo](https://github.com/luizmaibashi/Base_de_Conhecimento/tree/main/docs/wayfinder/offshore_intelligence_system) — 11 tickets, cada um uma pergunta fechada com evidência |
+
+---
+
+## O que a auditoria encontrou (antes de qualquer coisa)
+
+| # | Achado | Era alegado como | Era, de fato |
+|---|---|---|---|
+| 1 | Clusterização | "6 clusters confirmados por Elbow e Silhouette" | K real = 2, Silhouette fraco (0,20) — [ADR-0001](docs/adr/0001-k-real-vs-narrativa-de-6-clusters.md) |
+| 2 | Pesos do score | "Calibrado por especialista sênior de mercado" | Heurística de negócio, sem grid search nem dado real — [ADR-0002](docs/adr/0002-pesos-do-score-sao-heuristica-nao-calibracao.md) |
+| 3 | Thresholds de faixa | Implícito como percentil calculado | Cortes arbitrários (62/45/28/12) — [ADR-0003](docs/adr/0003-thresholds-de-faixa-sao-cortes-arbitrarios.md) |
+| 4 | Score do cliente | Uma fórmula, uma verdade | **Duas fórmulas divergentes** (notebook × dashboard) para o mesmo cliente — bug real, corrigido, 6 testes travando paridade |
+| 5 | Teste PF × PJ (dólar médio) | "Diferença confirmada" | Cohen's d = 0,007 — efeito trivial, sem diferença real |
+| 6 | Deploy | Nunca auditado | Container rodava como root, imagem base sem identidade fixa — [ADR-0005](docs/adr/0005-hardening-de-deploy-pos-auditoria.md) |
+
+Nenhum desses achados foi corrigido em silêncio — cada um tem ADR, ticket e, quando aplicável,
+teste automatizado que impede regressão.
 
 ---
 
@@ -38,7 +60,7 @@ por cliente (diferente de crédito ou câmbio corporativo) — ver
 
 ---
 
-## Walkthrough — Fases do CRISP-DM
+## Walkthrough — o caso de uso que serve de base pra auditoria (CRISP-DM)
 
 ### Fase 0-1: Entendimento do negócio e matriz de pesos
 
