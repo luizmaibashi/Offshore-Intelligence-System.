@@ -295,29 +295,38 @@ elif page == "🤖 Score em Tempo Real":
     with col1:
         pl_total = st.number_input("💰 PL Total (R$)", min_value=100_000, max_value=100_000_000, value=1_000_000, step=50_000)
         pct_offshore = st.slider("🌍 % Alocado Offshore", 0, 100, 5, 1, format="%d%%") / 100
-        pct_br = st.slider("🇧🇷 % Concentrado Brasil", 0, 100, 80, 1, format="%d%%") / 100
+        pct_cdi = st.slider("📈 % em CDI / Renda Fixa BR", 0, 100, 65, 1, format="%d%%") / 100
+        pct_rf_global = st.slider("🌐 % em Renda Fixa Global (bonds/T-Bills)", 0, 100, 0, 1, format="%d%%") / 100
 
     with col2:
-        pct_cdi = st.slider("📈 % em CDI / Renda Fixa BR", 0, 100, 65, 1, format="%d%%") / 100
         caixa_usd = st.number_input("💵 Caixa em USD (US$)", min_value=0, max_value=5_000_000, value=10_000, step=5_000)
         meses_sem_remessa = st.slider("📅 Meses Sem Remessa", 0, 36, 8)
+        pct_bdr = st.slider("📊 % em BDR/Feeder Funds", 0, 100, 0, 1, format="%d%%") / 100
+        variacao_acoes_br_pct = st.slider("📉 Variação % Ações BR no período", -50, 50, 0, 1, format="%d%%") / 100
 
     with col3:
         dolar_medio = st.number_input("💱 Dólar Médio Comprado (R$)", min_value=3.0, max_value=7.0, value=5.40, step=0.10)
         dolar_atual = cfg.get("dolar_benchmark", 5.0)
         st.metric("Dólar Benchmark Configurado", f"R$ {dolar_atual:.2f}")
         segmento = st.selectbox("👤 Segmento", ["Qualificado", "Investidor", "Alta Renda", "Wealth"])
+        perfil_risco = st.selectbox("🎯 Perfil de Risco", ["Conservador", "Moderado", "Arrojado", "Agressivo"])
+        tem_gastos_dolar = st.checkbox("💳 Tem gastos recorrentes em dólar")
 
-    # Calcular Score Heurístico Simplificado usando Utils (Central de Features)
+    # Calcular Score Heurístico usando Utils (Central de Features) —
+    # mesma função (ADR-0002) usada pelo notebook, garante paridade treino-serventia.
     score_total, subscores = calcular_score_ois(
         segmento=segmento,
-        pct_br=pct_br,
         pct_offshore=pct_offshore,
         pct_cdi=pct_cdi,
         caixa_usd=caixa_usd,
         meses_sem_remessa=meses_sem_remessa,
         dolar_medio=dolar_medio,
         dolar_atual=dolar_atual,
+        perfil_risco=perfil_risco,
+        pct_rf_global=pct_rf_global,
+        pct_bdr=pct_bdr,
+        variacao_acoes_br_pct=variacao_acoes_br_pct,
+        tem_gastos_dolar=tem_gastos_dolar,
         cfg=cfg if data_loaded else {},
         pesos=pesos
     )
