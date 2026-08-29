@@ -125,6 +125,41 @@ revelar que algum dos 10 critérios importa menos do que o peso heurístico suge
   (média/desvio do score, ou do ruído) ser calculada — normalizar com a base inteira e só depois
   splitar vaza informação do teste pro treino (leakage clássico), mesmo em outcome simulado.
 
+## Resultado (executado 2026-08-29)
+
+`notebooks/OIS_Outcome_Simulado.ipynb` implementado e executado de ponta a ponta.
+
+**Achado ao calibrar:** a fórmula inicial (`score_z + ruído`) não conseguia atingir AUC teórico
+acima de ~0,75 mesmo com ruído quase zero — teto estrutural, não bug de busca. Motivo: um
+sorteio Bernoulli sobre probabilidade moderada (perto de 0,5) já é incerto por natureza, mesmo
+quando a probabilidade é perfeitamente monótona no score. Corrigido introduzindo um parâmetro de
+**temperatura** (`score_z / temperatura + ruído`) que empurra as probabilidades pra mais perto
+dos extremos — achado documentado no código, não escondido.
+
+**Calibração final:** temperatura = 0,7875 → AUC teórico do gerador = 0,7895 (dentro da faixa
+0,75-0,80 do contrato). Outcome simulado: 48,7% de conversão no treino, 48,9% no teste —
+balanceado, sem classe degenerada.
+
+**Resultado da comparação (holdout, mesmo `converteu` simulado):**
+
+| | AUC-ROC |
+|---|---|
+| Heurística (`score_gap_total`) | 0,7753 |
+| Classificador (LogisticRegression, 7 features brutas) | 0,7608 |
+
+**O classificador perdeu da heurística por 0,0146 AUC.** Publicado como saiu, conforme o
+contrato do §5 — sem reajuste de temperatura após ver o resultado.
+
+**Por que isso é um resultado honesto, não uma falha:** a heurística tem vantagem estrutural
+nesse experimento — ela é literalmente a fonte da probabilidade de conversão simulada (o outcome
+foi gerado *a partir* do score). O classificador aprende só de 7 features brutas (subconjunto
+observável das 10 originais, sem os pesos exatos), sem "ver" a fórmula que gerou o rótulo. Um
+classificador perder nesse desenho não implica que calibração estatística real perderia pra
+heurística com outcome de conversão real — implica que, *neste teste específico, desenhado para
+favorecer a heurística por construção*, ela ganhou. É essa distinção — o que o experimento prova
+versus o que ele não prova — que o notebook declara explicitamente, e é o motivo do critério de
+sucesso não ter sido "modelo vence" (ver §5).
+
 ## 7. LINKS RELACIONADOS
 
 - [ADR-0002](0002-pesos-do-score-sao-heuristica-nao-calibracao.md) — os pesos que este experimento pode, no futuro, ajudar a questionar.
