@@ -1,19 +1,16 @@
 # Offshore Intelligence System (OIS)
 
-![Python](https://img.shields.io/badge/Python-3.10+-1B3A6B?style=for-the-badge&logo=python&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-Data_Manipulation-2E86AB?style=for-the-badge&logo=pandas&logoColor=white)
-![Scikit-Learn](https://img.shields.io/badge/Scikit_Learn-Clustering-44BBA4?style=for-the-badge&logo=scikit-learn&logoColor=white)
-![CRISP-DM](https://img.shields.io/badge/Methodology-CRISP--DM-F18F01?style=for-the-badge)
-![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-
 **Este projeto é, antes de tudo, uma auditoria.** Um sistema de priorização de clientes offshore
 (CRISP-DM completo, notebook + dashboard) chegou funcionando, mas com alegações que não batiam
 com o próprio código: pesos "calibrados por especialista" sem calibração nenhuma, um teste de
 hipótese citado como "diferença confirmada" que na verdade tinha efeito trivial (Cohen's
 d=0,007), e um bug real: notebook e dashboard calculavam o score do mesmo cliente com fórmulas
-diferentes. 11 tickets de investigação, 5 ADRs e uma auditoria de deploy depois, o sistema faz
+diferentes. 11 tickets de investigação, 7 ADRs e uma auditoria de deploy depois, o sistema faz
 exatamente o que sempre fez, mas agora dá pra provar isso, e cada limitação está declarada em
-vez de escondida ([ADR-0006](docs/adr/0006-reposicionamento-auditoria-como-produto.md)).
+vez de escondida ([ADR-0006](docs/adr/0006-reposicionamento-auditoria-como-produto.md)). Um
+passo adiante do reposicionamento: a Fase 7 treina um classificador supervisionado contra um
+outcome simulado e publica o resultado sem filtro, com o modelo perdendo da heurística por
+pouco ([ADR-0007](docs/adr/0007-outcome-simulado-para-modelo-supervisionado.md)).
 
 | Deploy | Streamlit App, container roda com usuário não-root e imagem pinada por digest ([ADR-0005](docs/adr/0005-hardening-de-deploy-pos-auditoria.md)) |
 | Arquitetura | Fonte única de scoring compartilhada entre notebook e dashboard ([ADR-0002](docs/adr/0002-pesos-do-score-sao-heuristica-nao-calibracao.md)) |
@@ -158,6 +155,31 @@ registrado como próximo passo, não como entregue.
 3. **Dashboard Streamlit:** interface para a equipe de assessores navegar a lista priorizada e
    simular score de cliente novo.
 
+### Fase 7: um modelo supervisionado, publicado como saiu (ADR-0007)
+
+Até aqui o score era 100% heurístico e nunca havia sido comparado com um classificador
+treinado. Como não existe outcome real de conversão (ADR-0004), a comparação usou um **outcome
+simulado com ruído deliberado**: uma variável `converteu` (0/1) gerada como função
+probabilística do score, com incerteza suficiente para não ser um espelho da fórmula. O
+parâmetro de ruído foi fixado antes de rodar o experimento (AUC teórico do gerador entre 0,75 e
+0,80; valor final 0,7895), para tirar a tentação de ajustá-lo até o modelo ganhar.
+
+O experimento vive em notebook separado (`notebooks/OIS_Outcome_Simulado.ipynb`) e não altera
+`src/utils.py`. Métrica única: AUC-ROC no holdout.
+
+| | AUC-ROC |
+|---|---|
+| Heurística (`score_gap_total`) | 0,7753 |
+| Classificador (LogisticRegression, 7 features brutas) | 0,7608 |
+
+**O classificador perdeu por 0,0146 de AUC. Publicado como saiu, sem reajuste depois de ver o
+resultado.** O critério de sucesso definido no ADR-0007 nunca foi "o modelo vence": foi "a
+comparação existe e é honesta". A heurística tem vantagem estrutural neste teste, porque o
+outcome simulado foi gerado a partir dela e o classificador só enxerga 7 features brutas, sem os
+pesos. Isso não prova que uma calibração estatística real perderia para a heurística com dado de
+conversão verdadeiro. Prova que, num teste desenhado para favorecer a heurística, ela ganhou. É
+a mesma disciplina de resultado negativo medido e publicado que aparece na Fase 4.
+
 ---
 
 ## Como executar
@@ -188,6 +210,9 @@ Veja [REPRODUCIBILITY.md](REPRODUCIBILITY.md) para o guia completo de setup.
   ([ADR-0003](docs/adr/0003-thresholds-de-faixa-sao-cortes-arbitrarios.md)).
 - **O clustering (K=2) não sustenta segmentação comercial rica**: Silhouette fraco (0,2040),
   registrado como próximo passo, não como entregue ([ADR-0001](docs/adr/0001-k-real-vs-narrativa-de-6-clusters.md)).
+- **O classificador da Fase 7 foi treinado contra outcome simulado, não real.** O teste é
+  desenhado para favorecer a heurística; o modelo perder nele não diz nada sobre desempenho com
+  dado de conversão real ([ADR-0007](docs/adr/0007-outcome-simulado-para-modelo-supervisionado.md)).
 - **O ROI é cenário, não medição.** Sem dado de conversão real pós-implantação.
 - **O dashboard não tem autenticação.** Decisão consciente: projeto de portfólio/demo sobre
   base sintética, não produção com dado real de cliente
@@ -241,7 +266,8 @@ Offshore-Intelligence-System/
 
 1. **Clustering:** investigar se features diferentes (ou dado real) sustentam segmentação
    comportamental além do que o score já cobre.
-2. **Modelo supervisionado:** com outcome real de conversão coletado, treinar classificador
-   sobre os mesmos 10 critérios e comparar com o score heurístico atual.
+2. **Modelo supervisionado com outcome real:** a Fase 7 já treinou um classificador contra
+   outcome *simulado* (ADR-0007). Quando houver dado de conversão real, repetir a comparação
+   sobre ele, sem a vantagem estrutural que a heurística tem no teste simulado.
 3. **Recalibração de pesos e thresholds:** com dado de conversão real, substituir a heurística
    atual (ADR-0002, ADR-0003) por valores calibrados.
