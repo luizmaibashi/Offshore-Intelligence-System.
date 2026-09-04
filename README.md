@@ -5,16 +5,20 @@
 com o próprio código: pesos "calibrados por especialista" sem calibração nenhuma, um teste de
 hipótese citado como "diferença confirmada" que na verdade tinha efeito trivial (Cohen's
 d=0,007), e um bug real: notebook e dashboard calculavam o score do mesmo cliente com fórmulas
-diferentes. 11 tickets de investigação, 7 ADRs e uma auditoria de deploy depois, o sistema faz
+diferentes. 11 tickets de investigação, 8 ADRs e uma auditoria de deploy depois, o sistema faz
 exatamente o que sempre fez, mas agora dá pra provar isso, e cada limitação está declarada em
 vez de escondida ([ADR-0006](docs/adr/0006-reposicionamento-auditoria-como-produto.md)). Um
 passo adiante do reposicionamento: a Fase 7 treina um classificador supervisionado contra um
 outcome simulado e publica o resultado sem filtro, com o modelo perdendo da heurística por
-pouco ([ADR-0007](docs/adr/0007-outcome-simulado-para-modelo-supervisionado.md)).
+pouco ([ADR-0007](docs/adr/0007-outcome-simulado-para-modelo-supervisionado.md)). A Fase 8 volta um
+passo e fecha o buraco mais básico de todos: o score nunca tinha sido medido contra a regra de bolso
+que o assessor usa hoje, ligar primeiro pros maiores clientes
+([ADR-0008](docs/adr/0008-baselines-ingenuos-para-fechar-o-gate-1.md)).
 
 | Deploy | Streamlit App, container roda com usuário não-root e imagem pinada por digest ([ADR-0005](docs/adr/0005-hardening-de-deploy-pos-auditoria.md)) |
 | Arquitetura | Fonte única de scoring compartilhada entre notebook e dashboard ([ADR-0002](docs/adr/0002-pesos-do-score-sao-heuristica-nao-calibracao.md)) |
 | ROI | Cenário com premissas explícitas, não resultado medido (ver Fase 5) |
+| Gate 1 | Score medido contra baselines ingênuos com IC 95%, resultado na Fase 8 ([ADR-0008](docs/adr/0008-baselines-ingenuos-para-fechar-o-gate-1.md)) |
 | Auditoria | [Board completo](https://github.com/luizmaibashi/Base_de_Conhecimento/tree/main/docs/wayfinder/offshore_intelligence_system): 11 tickets, cada um uma pergunta fechada com evidência |
 
 ---
@@ -50,6 +54,13 @@ e JGP) estão correndo para capturar ([Forbes](https://forbes.com.br/forbes-mone
 especialista de mercado cruza relatórios manualmente para achar contas com alocação
 desbalanceada frente a esse gap. Isso é lento, sem critério padronizado de quem contatar
 primeiro, e deixa capital do cliente ocioso em vez de alocado em produtos internacionais.
+
+**Como eu sei que essa dor existe?** Não sei. A ideia nasceu de uma conversa com um profissional
+da área, e duas rodadas de pesquisa em 2026 não acharam nenhuma confirmação pública de que assessor
+sofra com isso: nem case de banco, nem vaga de emprego pedindo essa competência, nem concorrente
+vendendo a solução. O tamanho do mercado é fato bem documentado (as fontes acima). A fricção
+operacional é suposição. O parágrafo anterior descreve o problema que o sistema modela. Nada
+aqui verifica que ele aconteça em campo.
 
 **A solução:** motor que processa a base diária, aplica 10 critérios de gap ponderados e
 entrega uma lista priorizada com o motivo do contato por cliente. A base de clientes usada
@@ -182,6 +193,56 @@ pesos. Isso não prova que uma calibração estatística real perderia para a he
 conversão verdadeiro. Prova que, num teste desenhado para favorecer a heurística, ela ganhou. É
 a mesma disciplina de resultado negativo medido e publicado que aparece na Fase 4.
 
+### Fase 8: o teste que faltava, contra a regra de bolso (ADR-0008)
+
+A Fase 7 comparou o score com um classificador treinado. Faltava a comparação mais óbvia, e a mais
+barata: o que o assessor faz hoje sem ferramenta nenhuma. Ordenar a carteira por uma coluna e ligar
+de cima pra baixo. Ligar primeiro pros maiores clientes. Ligar pra quem sumiu faz mais tempo. Ligar
+na ordem que o CRM cuspir.
+
+Isso é o Gate 1 de viabilidade, e o projeto nunca tinha fechado. Vender priorização inteligente sem
+medir contra o sort de planilha é a mesma alegação sem verificação que a auditoria deste repositório
+existe pra corrigir.
+
+Três baselines entraram no mesmo holdout, com o mesmo `converteu` simulado da Fase 7 e a mesma
+métrica. A direção de cada um ficou escrita no ADR-0008 antes de rodar, junto da trava de publicar o
+resultado ganhando ou perdendo. Toda diferença sai com intervalo de confiança de 95% por bootstrap
+pareado, porque diferença de AUC em 900 clientes sem intervalo é falsa precisão.
+
+| Competidor | AUC-ROC | IC 95% |
+|---|---|---|
+| Score heurístico (OIS) | 0,7753 | 0,7474 a 0,8051 |
+| LogisticRegression (Fase 7) | 0,7608 | 0,7295 a 0,7911 |
+| Baseline: mais dias sem remessa | 0,5515 | 0,5153 a 0,5881 |
+| Baseline: ordem aleatória | 0,4901 | 0,4508 a 0,5268 |
+| Baseline: maior patrimônio | 0,4536 | 0,4151 a 0,4907 |
+
+O baseline aleatório caiu com 0,5 dentro do intervalo, que era o sanity check combinado no ADR. Se
+ele tivesse dado outra coisa, o pipeline de avaliação estaria com bug e nenhum número da tabela
+valeria.
+
+O score venceu os três, com folga que o intervalo não chega perto de cruzar. O achado que interessa,
+porém, está em outro lugar.
+
+**Ligar primeiro pros maiores clientes ficou abaixo do acaso** (0,4536, com o intervalo excluindo
+0,5). No mundo simulado, ordenar a carteira por patrimônio é pior que sortear nomes num chapéu. Tem
+explicação no desenho: o score aponta gap de alocação, e cliente grande costuma já ter offshore.
+Quem tem gap é o cliente médio esquecido. A regra de bolso do mercado e o score apontam pra lados
+opostos da carteira.
+
+Duas notas menores. `dias_sem_remessa` sozinho já carrega sinal fraco mas real (0,5515, acima do
+acaso), a única das três regras que não é ruído. E a vitória da Fase 7 sobre a LogisticRegression
+sobreviveu ao intervalo por pouquíssimo: 0,0146 de diferença, com limite inferior em 0,0004. O
+ADR-0007 publicou esse número sem intervalo, o que fazia a diferença parecer mais sólida do que ela
+é.
+
+**O que isso não prova.** O `converteu` simulado foi gerado a partir do próprio score, então o score
+competiu num jogo montado a favor dele, exatamente como aconteceu com o classificador na Fase 7.
+Ganhar era o desfecho esperado por construção, e o valor do experimento estava no cenário oposto,
+que não ocorreu. O que dá pra afirmar é que o score não é equivalente às regras de bolso: ordena a
+carteira de um jeito estruturalmente diferente e, no caso do patrimônio, quase oposto. Se essa
+ordenação converte mais cliente de verdade, nenhum notebook com dado sintético responde.
+
 ---
 
 ## Como executar
@@ -215,6 +276,11 @@ Veja [REPRODUCIBILITY.md](REPRODUCIBILITY.md) para o guia completo de setup.
 - **O classificador da Fase 7 foi treinado contra outcome simulado, não real.** O teste é
   desenhado para favorecer a heurística; o modelo perder nele não diz nada sobre desempenho com
   dado de conversão real ([ADR-0007](docs/adr/0007-outcome-simulado-para-modelo-supervisionado.md)).
+- **A dor de negócio é modelada, não verificada em campo.** Duas rodadas de pesquisa em 2026 não
+  acharam confirmação pública de que assessor sofra com esse problema. Ver a seção de contexto.
+- **O Gate 1 foi fechado no mundo simulado, e só nele.** O score bate as três regras de bolso contra
+  um outcome que foi gerado a partir dele mesmo, o que favorece o score por construção
+  ([ADR-0008](docs/adr/0008-baselines-ingenuos-para-fechar-o-gate-1.md)).
 - **O ROI é cenário, não medição.** Sem dado de conversão real pós-implantação.
 - **O dashboard não tem autenticação.** Decisão consciente: projeto de portfólio/demo sobre
   base sintética, não produção com dado real de cliente
@@ -273,3 +339,6 @@ Offshore-Intelligence-System/
    sobre ele, sem a vantagem estrutural que a heurística tem no teste simulado.
 3. **Recalibração de pesos e thresholds:** com dado de conversão real, substituir a heurística
    atual (ADR-0002, ADR-0003) por valores calibrados.
+4. **Outcome independente do score:** repetir a comparação da Fase 8 com um `converteu` que não seja
+   gerado a partir do `score_gap_total`, removendo a vantagem estrutural que hoje torna a vitória do
+   score esperada por construção.
