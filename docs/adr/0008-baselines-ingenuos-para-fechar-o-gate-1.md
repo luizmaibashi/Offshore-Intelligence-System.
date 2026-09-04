@@ -1,7 +1,7 @@
 # ADR-0008: Baselines ingênuos para fechar o Gate 1 que o projeto nunca fechou
 
 **Data:** 2026-09-04
-**Status:** Accepted (decisão travada — implementação pendente)
+**Status:** Accepted (implementado e publicado em 2026-09-04 — ver seção Resultado)
 **Proposto por:** Luiz
 **Contexto:** `notebooks/OIS_Outcome_Simulado.ipynb`, infra do ADR-0007
 
@@ -149,6 +149,58 @@ medido e publicado, sobre a competência que ele alega ter."
 - **Aviso de assimetria colado no resultado:** a tabela final carrega, na mesma célula, a nota de
   que o outcome foi gerado a partir do score e que isso favorece o score por construção — de modo
   que ninguém leia a tabela sem ler a ressalva.
+
+## Resultado (executado 2026-09-04)
+
+Implementado em `notebooks/OIS_Outcome_Simulado.ipynb` (seção 5, células novas ao final) e executado
+de ponta a ponta. As células do ADR-0007 reproduziram números idênticos aos publicados lá
+(temperatura 0,7875, AUC teórico 0,7895, heurística 0,7753, classificador 0,7608) — o holdout e o
+`converteu` avaliados são literalmente os mesmos objetos, como o §6 exigia.
+
+**AUC-ROC no holdout (n = 900, 440 conversões), IC 95% bootstrap pareado, 1.000 reamostragens:**
+
+| Competidor | AUC-ROC | IC 95% |
+|---|---|---|
+| Score heurístico (OIS) | 0,7753 | [0,7474 · 0,8051] |
+| LogisticRegression (ADR-0007) | 0,7608 | [0,7295 · 0,7911] |
+| Baseline: mais dias sem remessa | 0,5515 | [0,5153 · 0,5881] |
+| Baseline: ordem aleatória | 0,4901 | [0,4508 · 0,5268] |
+| Baseline: maior patrimônio | 0,4536 | [0,4151 · 0,4907] |
+
+**Sanity check do §6: passou.** O IC do baseline aleatório contém 0,5.
+
+**Diferenças (score menos competidor), IC da própria diferença:**
+
+| Comparação | Δ AUC | IC 95% | Leitura |
+|---|---|---|---|
+| vs LogisticRegression | +0,0146 | [+0,0004 · +0,0285] | score vence, por margem que quase toca zero |
+| vs maior patrimônio | +0,3217 | [+0,2675 · +0,3766] | score vence |
+| vs ordem aleatória | +0,2853 | [+0,2416 · +0,3358] | score vence |
+| vs dias sem remessa | +0,2239 | [+0,1802 · +0,2685] | score vence |
+
+**Gate 1 fechado — no mundo simulado declarado, e só nele.** O score bate as três regras de bolso
+com folga que o intervalo não chega perto de cruzar.
+
+**Três achados que valem mais que o placar:**
+
+1. **"Liga pros maiores clientes primeiro" ficou abaixo do acaso** (0,4536, IC excluindo 0,5). É a
+   leitura direta da correlação de Spearman de −0,268 registrada no §2 antes de rodar, agora
+   quantificada: o score e a regra de bolso mais citada do mercado apontam para lados opostos da
+   carteira. Faz sentido no desenho — cliente grande tende a já ter alocação offshore, e quem tem
+   gap é o cliente médio esquecido. É afirmação sobre o desenho do score, não sobre o mundo real.
+2. **`dias_sem_remessa` sozinho carrega sinal fraco mas real** (0,5515, IC acima de 0,5). É a única
+   das três regras de bolso que não é ruído puro.
+3. **A vitória do ADR-0007 sobre a LogisticRegression sobreviveu ao intervalo por muito pouco**
+   (limite inferior +0,0004). O ADR-0007 publicou 0,0146 sem IC, o que fazia a diferença parecer
+   mais sólida do que é. Continua vitória pelo critério, com margem quase indistinguível de empate —
+   e é exatamente por isso que o §2 deste ADR passou a exigir IC em toda diferença reportada.
+
+**O que o resultado não prova, repetido aqui porque a tabela vai circular sozinha:** o `converteu`
+foi gerado a partir do `score_gap_total`, então o score competiu num jogo montado a favor dele. A
+vitória era o desfecho esperado por construção; o valor informativo do experimento estava no
+cenário oposto, que não ocorreu. O que se afirma com honestidade é que **o score não é equivalente
+às regras de bolso** — ordena a carteira de forma estruturalmente diferente e, no caso de `pl_brl`,
+quase oposta. Se essa ordenação converte mais cliente de verdade, este experimento não responde.
 
 ## 7. LINKS RELACIONADOS
 
