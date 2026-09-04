@@ -37,8 +37,10 @@ teste automatizado que impede regressão.
 
 ## Contexto e dor de negócio
 
-A ANBIMA recomenda alocação mínima de 16-18% do patrimônio em ativos no exterior para proteger
-o poder de compra da variação cambial ([ANBIMA via Safra, 2026](https://oespecialista.safra.com.br/anbima-investidor-brasileiro-2026/)). Na prática, mais de 95% dos ativos de
+Um estudo da FGV EAESP sobre o impacto cambial no consumo dos brasileiros, apresentado no evento
+ANBIMA Global Insights 2025, aponta alocação de 16-18% do patrimônio em ativos no exterior — subindo
+para famílias de alta renda — como referência para proteger o poder de compra da variação cambial
+([FGV EAESP via evento ANBIMA Global Insights 2025, reportado pela Gorila](https://gorila.com.br/blog/anbima-global-insights-2025)). Na prática, mais de 95% dos ativos de
 brasileiros permanecem em ativo local, um dos menores níveis de diversificação global entre
 países emergentes ([NeoFeed](https://neofeed.com.br/negocios/fundos-internacionais-a-proxima-fronteira-da-xp/)). É o gap que XP (17% da custódia em offshore, R$180bi em wealth B2B,
 +80% em menos de 2 anos) e BTG (~R$130bi em multi-family office após comprar Julius Baer Brasil
